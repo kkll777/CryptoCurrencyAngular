@@ -1,5 +1,9 @@
 import { ApiService } from './../service/api.service';
-import { Component, OnInit } from '@angular/core';
+import { OnInit } from '@angular/core';
+import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'app-coin-list',
@@ -9,6 +13,11 @@ import { Component, OnInit } from '@angular/core';
 export class CoinListComponent implements OnInit {
 
   bannerData !: any[];
+  dataSource !: MatTableDataSource<any>;
+  displayedColumns: string[] = ['symbol', 'current_price', 'price_change_percentage_24h', 'market_cap'];
+
+  @ViewChild(MatPaginator) paginator !: MatPaginator;
+  @ViewChild(MatSort) sort !: MatSort;
   constructor(private api: ApiService) { }
 
   ngOnInit(): void {
@@ -24,11 +33,21 @@ export class CoinListComponent implements OnInit {
       }
     })
   }
-  getAllData(){
+  getAllData() {
     this.api.getCurrencyData('INR')
-    .subscribe(res=>{
-      console.log(res)
-    })
+      .subscribe(res => {
+        console.log(res)
+        this.dataSource = new MatTableDataSource(res)   //  將資料dump進tableDataSource中
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
+      })
   }
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
 
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+  }
 }
