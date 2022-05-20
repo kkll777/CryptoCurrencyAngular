@@ -3,6 +3,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { CurrencyService } from '../service/currency.service';
 
 @Component({
   selector: 'app-coin-detail',
@@ -12,9 +13,11 @@ import { BaseChartDirective } from 'ng2-charts';
 export class CoinDetailComponent implements OnInit {
 
   coinData: any;
-  coinId!:string;
-  days:number=30;
-  currency:string='USD'
+  coinId!: string;
+  days: number = 30;
+  currency: string = 'USD'
+  currentPrice !:string;
+  marketCap!:string;
 
   public lineChartData: ChartConfiguration['data'] = {
     datasets: [
@@ -47,7 +50,7 @@ export class CoinDetailComponent implements OnInit {
   public lineChartType: ChartType = 'line';
   @ViewChild(BaseChartDirective) myLineChart !: BaseChartDirective;
 
-  constructor(private api:ApiService, private activateRoute: ActivatedRoute) { }
+  constructor(private api: ApiService, private activateRoute: ActivatedRoute, private currencyService: CurrencyService) { }
 
   ngOnInit(): void {
     this.activateRoute.params.subscribe({
@@ -57,37 +60,62 @@ export class CoinDetailComponent implements OnInit {
       }
     })
     this.getCoinData();
-    this.getGraphData();
+    this.getGraphData(this.days);
+    this.currencyService.getCurrency().subscribe(
+      val => {
+        this.currency = val
+        this.getGraphData(this.days);
+        this.getCoinData();
+      }
+    )
   }
 
-  getCoinData(){
+  getCoinData() {
     this.api.getCurrencyById(this.coinId).subscribe({
-      next: res=>{
+      next: res => {
         console.log(res)
+        if (this.currency === 'USD') {
+          res.market_data.current_price.inr = res.market_data.current_price.usd;
+          res.market_data.market_cap.inr = res.market_data.market_cap.usd
+        }
+        res.market_data.current_price.inr = res.market_data.current_price.inr;
+        res.market_data.market_cap.inr = res.market_data.market_cap.inr
+        this.currentPrice = res.market_data.current_price.inr
+        this.marketCap = res.market_data.market_cap.inr
         this.coinData = res
       }
     })
   }
 
-  getGraphData(){
-    this.api.getGraphicalCurrencyData(this.coinId,'USD',this.days)
-    .subscribe({
-      next: res=> {
-        // console.log(res)
-        setTimeout(() => {
-          this.myLineChart.chart?.update();
-        }, 200);
-        this.lineChartData.datasets[0].data = res.prices.map((a:any) => {
-          return a[1]
-        });
-        this.lineChartData.labels = res.prices.map((a:any) => {
-          let date = new Date(a[0]);
-          let time = date.getHours() > 12 ? `${date.getHours() - 12}: ${date.getMinutes()} PM`:
-          `${date.getHours()}: ${date.getMinutes()} AM`
-          return this.days === 1 ? time: date.toLocaleDateString();
-        })
-      }
-    })
+  getGraphData(day:number) {
+    this.api.getGraphicalCurrencyData(this.coinId, this.currency,day)
+      .subscribe({
+        next: res => {
+          // console.log(res)
+          setTimeout(() => {
+            this.myLineChart.chart?.update();
+          }, 400);
+          this.lineChartData.datasets[0].data = res.prices.map((a: any) => {
+            return a[1]
+          });
+          this.lineChartData.labels = res.prices.map((a: any) => {
+            let date = new Date(a[0]);
+            let time = date.getHours() > 12 ? `${date.getHours() - 12}: ${date.getMinutes()} PM` :
+              `${date.getHours()}: ${date.getMinutes()} AM`
+            return day === 1 ? time : date.toLocaleDateString();
+          })
+        }
+      })
   }
+
+  // getCurrencyType() {
+  //   this.currencyService.getCurrency().subscribe(
+  //     val => {
+  //       this.currency = val
+  //       this.getCoinData();
+  //       this.getGraphData(this.days);
+  //     }
+  //   );
+  // }
 
 }
