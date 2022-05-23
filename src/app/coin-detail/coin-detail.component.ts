@@ -91,7 +91,7 @@ export class CoinDetailComponent implements OnInit {
     this.api.getGraphicalCurrencyData(this.coinId, this.currency,day)
       .subscribe({
         next: res => {
-          // console.log(res)
+          console.log('getGraphRes => '+res)
           setTimeout(() => {
             this.myLineChart.chart?.update();
           }, 400);
