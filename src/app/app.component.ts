@@ -10,7 +10,7 @@ export class AppComponent {
   constructor(private currencyService: CurrencyService) {
 
   }
-  selectCurrency !: string;
+  selectCurrency : string = 'TWD';
   sendCurrency(event:any) {
     console.log(event)
     this.currencyService.setCurrency(event)

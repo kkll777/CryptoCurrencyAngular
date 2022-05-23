@@ -7,7 +7,7 @@ import { BehaviorSubject } from 'rxjs';
 export class CurrencyService {
 
   constructor() { }
-  private selectCurrency$ : BehaviorSubject<string> = new BehaviorSubject<string>("INR");
+  private selectCurrency$ : BehaviorSubject<string> = new BehaviorSubject<string>("TWD");
   getCurrency(){
     return this.selectCurrency$.asObservable();
   }
